@@ -34,6 +34,9 @@ public class Main {
       List<OfferComparationOutPut> comparedOffers = new ArrayList<OfferComparationOutPut>();
       OfferComparationOutPut comparedOffer;
 
+      List<OfferComparationOutPut> notFoundOffers = new ArrayList<OfferComparationOutPut>();
+      OfferComparationOutPut notFoundOffer;
+
       for (Offer daffyOffer : dafyOffers) {
          i++;
 
@@ -42,7 +45,7 @@ public class Main {
 
          // take off 2 characters from each extremity of dafy offer sku
          matchedSkuKey = matchedSkuKey.substring(2, matchedSkuKey.length() - 2);
-
+         boolean isToAdd = true;
          for (Offer catalogDafyOffer : catalogDafyOffers) {
 
             if (catalogDafyOffer.getEan() != null && catalogDafyOffer.getEan().contains(matchedSkuKey)) {
@@ -64,8 +67,42 @@ public class Main {
          }
       }
 
+      int j = 0;
+
+      boolean toSave;
+      for (Offer catalogDafyOffer : catalogDafyOffers) {
+         toSave = true;
+         j++;
+         for (Offer daffyOffer : dafyOffers) {
+
+            matchedSkuKey = daffyOffer.getInternalref();
+            if (matchedSkuKey.contains("-")) matchedSkuKey = matchedSkuKey.substring(0, matchedSkuKey.indexOf("-"));
+
+            // take off 2 characters from each extremity of dafy offer sku
+            matchedSkuKey = matchedSkuKey.substring(2, matchedSkuKey.length() - 2);
+
+            if (catalogDafyOffer.getEan() != null && catalogDafyOffer.getEan().contains(matchedSkuKey)) {
+               System.out.println(matchedSkuKey + " " + catalogDafyOffer.getEan() + "  " + daffyOffer.getInternalref());
+
+               toSave = false;
+               break;
+            }
+
+         }
+         if (toSave) {
+            notFoundOffer = new OfferComparationOutPut();
+            notFoundOffer.setCatalogCPID("" + catalogDafyOffer.getCpid());
+            notFoundOffer.setCatalogOfferEan(catalogDafyOffer.getEan());
+            notFoundOffer.setCatalogOfferTitle(catalogDafyOffer.getTitle());
+            notFoundOffers.add(notFoundOffer);
+         }
+      }
+
       System.out.println("dafy offer number ____" + i);
       System.out.println("offer to crawl size ____" + offersToCrawl.size());
+
+      System.out.println("catalog offer number ____" + j);
+      System.out.println("catalog offer number not found  ____" + notFoundOffers.size());
 
       Set<String> linksToCrawl = new HashSet<String>();
 
@@ -76,11 +113,17 @@ public class Main {
 
       CsvParser csvParser = new CsvParser(";", linksToCrawl, comparedOffers);
 
+      CsvParser csvParserToCheck = new CsvParser(";", linksToCrawl, notFoundOffers);
+
       if (csvParser.saveComparedFile("OutPut.csv")) {
          System.out.println("FINISH");
       }
 
       if (csvParser.saveToCrawlLinks("ToCrawl.csv")) {
+         System.out.println("FINISH");
+      }
+
+      if (csvParserToCheck.saveComparedFile("CatalogOffersToCheck.csv")) {
          System.out.println("FINISH");
       }
 
